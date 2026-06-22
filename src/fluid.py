@@ -1,7 +1,7 @@
 import math
 import pandas as pd
 from pathlib import Path
-from interp import LinearInterpolator
+from src.interpolator import LinearInterpolator
 
 
 class Fluid:
@@ -20,8 +20,8 @@ class Fluid:
         """
         self.M     = M
         self.rho_c = rho_c
-        self.xa    = xa
-        self.xy    = xy
+        self.xa    = xa/100
+        self.xy    = xy/100
         self.T     = T
 
         csv_path = Path(__file__).parent.parent / "interp_data.csv"
@@ -33,6 +33,9 @@ class Fluid:
         )
 
     def z(self, P_atm: float) -> float:
+        if P_atm <= 0:
+            raise ValueError("Давление должно быть больше нуля.")
+
         """
         Z-фактор по GERG-91 mod. (ГОСТ 30319.2-96).
         P_atm — давление в атм.
@@ -40,7 +43,7 @@ class Fluid:
         T = self.T
 
         xe = 1.0 - self.xa - self.xy          # мольная доля углеводородов
-        P_mpa = P_atm * 0.101325              # атм в МПа
+        P_mpa = P_atm * 0.101325              # атм → МПа
 
         Zc = 1.0 - (0.074 * self.rho_c
                     - 0.006
@@ -101,7 +104,10 @@ class Fluid:
 
         return Z/ Zc    
 
-    def ro(self, P_atm: float) -> float:
+    def ro(self, P_atm):
+        if P_atm <= 0:
+            raise ValueError("Давление должно быть больше нуля.")
+
         """Плотность газа [кг/м³] при давлении P_atm [атм]."""
         P_pa = P_atm * 101325
         Z    = self.z(P_atm)
@@ -111,7 +117,10 @@ class Fluid:
         """Плотность при стандартных условиях [кг/м³]. Z_std ≈ 1."""
         return self.P_STD * self.M / (1.0 * self.R * self.T_STD)
 
-    def bg(self, P_atm: float) -> float:
+    def bg(self, P_atm):
+        if P_atm <= 0:
+            raise ValueError("Давление должно быть больше нуля.")
+        
         """
         Фактор объёма газа [м³/м³].
         Bg = (P_std_atm * Z * T) / (P * T_std)
